@@ -15,7 +15,7 @@ from typing import Callable, Dict
 from twisted.internet import error, reactor
 from twisted.python import failure, log
 
-from cowrie.core import utils
+from cowrie.core import utils, fspersistence
 from cowrie.shell.command import HoneyPotCommand
 from cowrie.shell.honeypot import HoneyPotShell
 
@@ -958,10 +958,14 @@ commands["reboot"] = Command_reboot
 class Command_history(HoneyPotCommand):
     def call(self):
         try:
+            # Clear history if -c flag passed
             if len(self.args) and self.args[0] == "-c":
                 self.protocol.historyLines = []
                 self.protocol.historyPosition = 0
+                fspersistence.clear_command_history(self.protocol.clientIP)
                 return
+
+            self.protocol.historyLines = fspersistence.get_command_history(self.protocol.clientIP)
             count = 1
             for line in self.protocol.historyLines:
                 self.write(f" {str(count).rjust(4)}  {line}\n")

@@ -9,15 +9,16 @@ This is achieved by replaying filesystem-related commands upon user return.
 import json
 import logging
 import os
-from os.path import abspath, dirname, join
 
 
-def record_fs_commands(ip_addr: str):
+def record_fs_commands(ip_addr: str) -> None:
     """
-    Scans log for specified user and copies out all filesystem-related commands to a file '[ip] fs cmds.txt'.
+    Scans log for the user matching the specified IP address and copies out all filesystem-related commands to a file
+    `[ip]_fs_cmds.txt` in `cowrie/fspersistence`.
     If this file is already present, it is appended.
 
     @param ip_addr: a string containing the source IP address of the selected user
+    @return None
     """
 
     # Load the current log file
@@ -29,20 +30,6 @@ def record_fs_commands(ip_addr: str):
                 log_data.append(json.loads(line))
     except IOError as e:
         logging.exception('Could not load log file ', e)  # TODO: Is this the right way to log an exception in the Cowrie log?
-
-    # Create or load the filesystem command record file
-    fs_record = None
-
-    if not os.path.exists('fspersistence'):
-        os.makedirs('fspersistence')
-
-    try:
-        fs_record = open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'a')
-    except IOError as e:
-        logging.exception('Could not load or create fs command record file', e)
-
-    if fs_record is None:
-        return  # TODO: should probably handle this better
 
     # Search for filesystem commands from the specified user and append them to the filesystem command record file
     FS_COMMANDS = ['touch', 'mkdir', 'cp', 'rm']  # TODO: add curl support
@@ -59,33 +46,78 @@ def record_fs_commands(ip_addr: str):
                         session_commands = session_commands + message[5:] + '\n'
                         break
 
-    fs_record.write(session_commands)
-    fs_record.close()
+    # Create or load the filesystem command record file
+    if not os.path.exists('fspersistence'):
+        os.makedirs('fspersistence')
+
+    try:
+        fs_record = open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'a')
+        fs_record.write(session_commands)
+        fs_record.close()
+    except IOError as e:
+        logging.exception('Could not load or create fs command record file', e)  # TODO: also check logging is correct here
 
 
-def save_command_history(ip_addr):
+def replay_fs_commands(ip_addr: str) -> None:
     """
-    Saves the command history of the current user to a file 'cmd_hist'.
-    If this file is already present, it is appended.
+    Executes, in order, any previous filesystem-related commands executed by the user matching the specified IP address.
 
     @param ip_addr: a string containing the source IP address of the selected user
+    @return None
     """
 
 
-
-def replay_fs_commands(ip_addr):
+def append_command_history(ip_addr: str, command: str) -> None:
     """
-    Executes, in order, any previous filesystem-related commands executed by this user.
+    Appends the command history of the user matching the specified IP address to a file `[ip]_cmd_hist` in
+    `cowrie/fspersistence`.
 
     @param ip_addr: a string containing the source IP address of the selected user
+    @param command: a string containing the command to be recorded
+    @return None
     """
 
+    if not os.path.exists('fspersistence'):
+        os.makedirs('fspersistence')
+
+    try:
+        history = open('fspersistence/' + ip_addr + '_cmd_hist', 'a')
+        history.write(command)
+    except IOError as e:
+        logging.exception('Could not load or create command history file', e)  # TODO: also check logging exeception
 
 
-
-def restore_command_history(ip_addr):
+def get_command_history(ip_addr: str) -> list:
     """
-    Restores a user's commands from a previous session to the command history file.
+    Loads the user's command history into a list.
 
-    @param ip_addr: a string containing the spurce IP address of the selected user
+    @param ip_addr: a string containing the source IP address of the selected user
+    @return command history as a list of strings
     """
+
+    history = []
+
+    try:
+        with open('fspersistence/' + ip_addr + '_cmd_hist', 'r') as history_file:
+            for line in history_file.readlines():
+                history.append(line.rstrip())
+    except IOError as e:
+        logging.exception('Could not load command history file ', e)  # TODO: Again, exception correct way?
+
+    return history
+
+
+def clear_command_history(ip_addr: str) -> None:
+    """
+    Clears the command history file of the user matching the specified IP address.
+
+    @param ip_addr: a string containing the source IP address of the selected user
+    @return: None
+    """
+
+    try:
+        with open('fspersistence/' + ip_addr + '_cmd_hist', 'rb+') as history:
+            history.truncate(0)
+            history.close()
+    except IOError as e:
+        logging.exception('Could not load command history file ', e)  # TODO: Again, exception correct way?

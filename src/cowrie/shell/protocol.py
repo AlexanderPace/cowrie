@@ -16,6 +16,7 @@ from twisted.protocols.policies import TimeoutMixin
 from twisted.python import failure, log
 
 import cowrie.commands
+from cowrie.core import fspersistence
 from cowrie.core.config import CowrieConfig
 from cowrie.shell import command, honeypot
 
@@ -324,6 +325,7 @@ class HoneyPotInteractiveProtocol(HoneyPotBaseProtocol, recvline.HistoricRecvLin
         if len(self.cmdstack) == 1:
             if self.lineBuffer:
                 self.historyLines.append(b"".join(self.lineBuffer))
+                fspersistence.append_command_history(self.clientIP, b"".join(self.lineBuffer).decode("utf-8") + '\n')
             self.historyPosition = len(self.historyLines)
         return recvline.RecvLine.handle_RETURN(self)
 
