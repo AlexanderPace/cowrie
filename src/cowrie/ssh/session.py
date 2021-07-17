@@ -9,6 +9,7 @@ This module contains ...
 from twisted.conch.ssh import session
 from twisted.conch.ssh.common import getNS
 from twisted.python import log
+from cowrie.core import fspersistence
 
 
 class HoneyPotSSHSession(session.SSHSession):
@@ -49,6 +50,7 @@ class HoneyPotSSHSession(session.SSHSession):
         """
         session.SSHSession.closed(self)
         self.client = None
+        fspersistence.record_fs_commands(session.SSHSession.getPeer(self).address.host)
 
     def eofReceived(self) -> None:
         """
