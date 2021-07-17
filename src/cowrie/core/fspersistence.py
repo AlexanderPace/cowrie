@@ -37,7 +37,7 @@ def record_fs_commands(ip_addr: str):
         os.makedirs('fspersistence')
 
     try:
-        fs_record = open('fspersistence/' + ip_addr + ' fs cmds.txt', 'w+')  # TODO: currently apostrophes are being included in the filename
+        fs_record = open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'a')
     except IOError as e:
         logging.exception('Could not load or create fs command record file', e)
 
@@ -47,16 +47,19 @@ def record_fs_commands(ip_addr: str):
     # Search for filesystem commands from the specified user and append them to the filesystem command record file
     FS_COMMANDS = ['touch', 'mkdir', 'cp', 'rm']  # TODO: add curl support
 
-    # TODO: this should also only take entries from the most recent logoff
+    session_commands = ""
     for entry in log_data:
         if entry.get('src_ip') == ip_addr:
             message = entry.get('message')
-            if 'CMD' in message:
+            if 'New connection' in message:
+                session_commands = ""  # Reset the output to only get the last session for this IP
+            elif 'CMD' in message:
                 for command in FS_COMMANDS:
                     if command in message:
-                        fs_record.write(message + '\n')  # TODO: Still contains "CMD " in this string
+                        session_commands = session_commands + message[5:] + '\n'
                         break
 
+    fs_record.write(session_commands)
     fs_record.close()
 
 
