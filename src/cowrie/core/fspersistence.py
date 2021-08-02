@@ -61,7 +61,7 @@ def record_fs_commands(ip_addr: str) -> None:
         logging.exception('Could not load or create fs command record file', e)  # TODO: also check logging is correct here
 
 
-def replay_fs_commands(ip_addr: str, protocol, commands: dict) -> None:  # TODO: the protocol arg should have a type to it (HoneyPotBaseProtocol, perhaps)
+def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol', commands: dict) -> None:
     """
     Executes, in order, any previous filesystem-related commands executed by the user matching the specified IP address.
 
