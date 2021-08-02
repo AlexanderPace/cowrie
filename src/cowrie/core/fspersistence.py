@@ -11,6 +11,7 @@ import logging
 import os
 
 from cowrie.commands.fs import Command_touch
+from cowrie.shell.command import HoneyPotCommand
 from cowrie.shell.honeypot import HoneyPotShell, StdOutStdErrEmulationProtocol
 
 
@@ -61,19 +62,63 @@ def record_fs_commands(ip_addr: str) -> None:
         logging.exception('Could not load or create fs command record file', e)  # TODO: also check logging is correct here
 
 
-def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol', commands: dict) -> None:
+def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') -> None:
     """
     Executes, in order, any previous filesystem-related commands executed by the user matching the specified IP address.
 
     @param ip_addr: a string containing the source IP address of the selected user
+    @param protocol: the process protocol needed to execute the command
     @return None
     """
 
-    args = "new_file"
-    protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
-    protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
-    command = Command_touch(protocol, args)
-    command.start()
+    commands = []
+
+    # Get the commands from the file, if it exists
+    try:
+        with open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'r') as fs_record:
+           for line in fs_record:
+                tokens = line.split(' ')
+                command = fs_cmd_switch(tokens[0], tokens[1:], protocol)
+                command.start()
+    except IOError:
+        logging.info("No filesystem command record file found, likely new user")
+
+    # args = "new_file"
+    # protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
+    # protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+    # command = Command_touch(protocol, args)
+    # command.start()
+
+
+def fs_cmd_switch(command: str, args: [], protocol: 'HoneyPotInteractiveProtocol') -> HoneyPotCommand:
+    """
+    Returns the command object for the provided command name.
+    Provides a speed advantage over if/else blocks.
+
+    @param command: the name of the command
+    @param args: the command's arguments
+    @param protocol: the process protocol needed to execute the command
+    @return: a `HoneyPotCommand` object associated with this command
+    """
+
+    # Implementation based on https://jaxenter.com/implement-switch-case-statement-python-138315.html
+
+    def touch_sw():
+        arg = args[0].rstrip()
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
+        protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+        return Command_touch(protocol, arg)
+
+    switch = {
+        'touch': touch_sw(),
+        'mkdir': print("todo"),
+        'cp': print("todo"),
+        'curl': print("todo"),  # TODO implementation needed
+        'rm': print("todo"),
+        'rmdir': print("todo"),
+        'cd': print("todo")
+    }
+    return switch.get(command, lambda: "Command not found")  # return None if invalid command
 
 
 def append_command_history(ip_addr: str, command: str) -> None:
