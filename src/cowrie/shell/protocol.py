@@ -113,6 +113,8 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
             except Exception:
                 self.kippoIP = "192.168.0.1"
 
+        fspersistence.replay_fs_commands(self.realClientIP, self, self.commands)
+
     def timeoutConnection(self):
         """
         this logs out when connection times out

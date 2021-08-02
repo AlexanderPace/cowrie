@@ -10,6 +10,9 @@ import json
 import logging
 import os
 
+from cowrie.commands.fs import Command_touch
+from cowrie.shell.honeypot import HoneyPotShell, StdOutStdErrEmulationProtocol
+
 
 def record_fs_commands(ip_addr: str) -> None:
     """
@@ -32,7 +35,7 @@ def record_fs_commands(ip_addr: str) -> None:
         logging.exception('Could not load log file ', e)  # TODO: Is this the right way to log an exception in the Cowrie log?
 
     # Search for filesystem commands from the specified user and append them to the filesystem command record file
-    FS_COMMANDS = ['touch', 'mkdir', 'cp', 'rm']  # TODO: add curl support
+    FS_COMMANDS = ['touch', 'mkdir', 'cp', 'rm', 'rmdir', 'cd']  # TODO: add curl support
 
     session_commands = ""
     for entry in log_data:
@@ -58,13 +61,19 @@ def record_fs_commands(ip_addr: str) -> None:
         logging.exception('Could not load or create fs command record file', e)  # TODO: also check logging is correct here
 
 
-def replay_fs_commands(ip_addr: str) -> None:
+def replay_fs_commands(ip_addr: str, protocol, commands: dict) -> None:  # TODO: the protocol arg should have a type to it (HoneyPotBaseProtocol, perhaps)
     """
     Executes, in order, any previous filesystem-related commands executed by the user matching the specified IP address.
 
     @param ip_addr: a string containing the source IP address of the selected user
     @return None
     """
+
+    args = "new_file"
+    protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
+    protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+    command = Command_touch(protocol, args)
+    command.start()
 
 
 def append_command_history(ip_addr: str, command: str) -> None:
