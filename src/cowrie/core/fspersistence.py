@@ -74,9 +74,9 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
     # Get the commands from the file, if it exists
     try:
         with open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'r') as fs_record:
-           for line in fs_record:
+            for line in fs_record:
                 tokens = line.split(' ')
-                command = fs_cmd_switch(tokens[0], tokens[1:], protocol)
+                command = fs_cmd_switch(tokens[0], tokens[1:], protocol)  # list(tokens[1:])
                 command.start()
     except IOError:
         logging.info("No filesystem command record file found, likely new user")
@@ -88,13 +88,13 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
     # command.start()
 
 
-def fs_cmd_switch(command: str, args: [], protocol: 'HoneyPotInteractiveProtocol') -> HoneyPotCommand:
+def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtocol') -> HoneyPotCommand:
     """
     Returns the command object for the provided command name.
     Provides a speed advantage over if/else blocks.
 
     @param command: the name of the command
-    @param args: the command's arguments
+    @param args: a list of the command's arguments
     @param protocol: the process protocol needed to execute the command
     @return: a `HoneyPotCommand` object associated with this command
     """
@@ -105,7 +105,7 @@ def fs_cmd_switch(command: str, args: [], protocol: 'HoneyPotInteractiveProtocol
     args[len(args) - 1] = args[len(args) - 1].rstrip()
 
     # Add an empty argument if a command with no arguments has been stored to avoid an error
-    if len(args) == 1:
+    if len(args) == 0:
         args.append("")
 
     def touch_sw():
@@ -118,29 +118,25 @@ def fs_cmd_switch(command: str, args: [], protocol: 'HoneyPotInteractiveProtocol
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
         return Command_mkdir(protocol, *args)
 
-    def cp_sw(): # TODO
-        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+    def cp_sw():
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_cp, None, None, None)
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
-        # return Command_mkdir(protocol, *args)
-        return None
+        return Command_cp(protocol, *args)
 
-    def rm_sw(): # TODO
-        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+    def rm_sw():
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_rm, None, None, None)
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
-        # return Command_mkdir(protocol, *args)
-        return None
+        return Command_rm(protocol, *args)
 
-    def rmdir_sw(): # TODO
-        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+    def rmdir_sw():
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_rmdir, None, None, None)
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
-        # return Command_mkdir(protocol, *args)
-        return None
+        return Command_rmdir(protocol, *args)
 
-    def cd_sw(): # TODO
-        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+    def cd_sw():
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_cd, None, None, None)
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
-        # return Command_mkdir(protocol, *args)
-        return None
+        return Command_cd(protocol, *args)
 
     switch = {
         'touch': touch_sw,
