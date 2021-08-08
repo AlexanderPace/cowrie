@@ -33,7 +33,7 @@ def record_fs_commands(ip_addr: str) -> None:
             for line in log.readlines():
                 log_data.append(json.loads(line))
     except IOError as e:
-        logging.exception('Could not load log file ', e)  # TODO: Is this the right way to log an exception in the Cowrie log?
+        logging.exception('Could not load log file ', e)
 
     # Search for filesystem commands from the specified user and append them to the filesystem command record file
     FS_COMMANDS = ['touch', 'mkdir', 'cp', 'rm', 'rmdir', 'cd']  # TODO: add curl support
@@ -59,7 +59,7 @@ def record_fs_commands(ip_addr: str) -> None:
         fs_record.write(session_commands)
         fs_record.close()
     except IOError as e:
-        logging.exception('Could not load or create fs command record file', e)  # TODO: also check logging is correct here
+        logging.exception('Could not load or create fs command record file', e)
 
 
 def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') -> None:
@@ -80,12 +80,6 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
                 command.start()
     except IOError:
         logging.info("No filesystem command record file found, likely new user")
-
-    # args = "new_file"
-    # protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
-    # protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
-    # command = Command_touch(protocol, args)
-    # command.start()
 
 
 def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtocol') -> HoneyPotCommand:
@@ -142,7 +136,7 @@ def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtoc
         'touch': touch_sw,
         'mkdir': mkdir_sw,
         'cp': cp_sw,
-        'curl': print("todo"),  # TODO implementation needed
+        'curl': print("TODO: add curl support"),  # TODO implementation needed
         'rm': rm_sw,
         'rmdir': rmdir_sw,
         'cd': cd_sw
@@ -168,7 +162,7 @@ def append_command_history(ip_addr: str, command: str) -> None:
         history = open('fspersistence/' + ip_addr + '_cmd_hist', 'a')
         history.write(command)
     except IOError as e:
-        logging.exception('Could not load or create command history file', e)  # TODO: also check logging exeception
+        logging.exception('Could not load or create command history file', e)
 
 
 def get_command_history(ip_addr: str) -> list:
@@ -186,7 +180,7 @@ def get_command_history(ip_addr: str) -> list:
             for line in history_file.readlines():
                 history.append(line.rstrip())
     except IOError as e:
-        logging.exception('Could not load command history file ', e)  # TODO: Again, exception correct way?
+        logging.exception('Could not load command history file ', e)
 
     return history
 
@@ -204,4 +198,4 @@ def clear_command_history(ip_addr: str) -> None:
             history.truncate(0)
             history.close()
     except IOError as e:
-        logging.exception('Could not load command history file ', e)  # TODO: Again, exception correct way?
+        logging.exception('Could not load command history file ', e)
