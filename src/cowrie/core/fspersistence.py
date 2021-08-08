@@ -10,7 +10,7 @@ import json
 import logging
 import os
 
-from cowrie.commands.fs import Command_touch
+from cowrie.commands.fs import *
 from cowrie.shell.command import HoneyPotCommand
 from cowrie.shell.honeypot import HoneyPotShell, StdOutStdErrEmulationProtocol
 
@@ -71,8 +71,6 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
     @return None
     """
 
-    commands = []
-
     # Get the commands from the file, if it exists
     try:
         with open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'r') as fs_record:
@@ -103,22 +101,58 @@ def fs_cmd_switch(command: str, args: [], protocol: 'HoneyPotInteractiveProtocol
 
     # Implementation based on https://jaxenter.com/implement-switch-case-statement-python-138315.html
 
+    # Strip the newline from the final arg
+    args[len(args) - 1] = args[len(args) - 1].rstrip()
+
+    # Add an empty argument if a command with no arguments has been stored to avoid an error
+    if len(args) == 1:
+        args.append("")
+
     def touch_sw():
-        arg = args[0].rstrip()
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
-        return Command_touch(protocol, arg)
+        return Command_touch(protocol, *args)
+
+    def mkdir_sw():
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+        protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+        return Command_mkdir(protocol, *args)
+
+    def cp_sw(): # TODO
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+        protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+        # return Command_mkdir(protocol, *args)
+        return None
+
+    def rm_sw(): # TODO
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+        protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+        # return Command_mkdir(protocol, *args)
+        return None
+
+    def rmdir_sw(): # TODO
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+        protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+        # return Command_mkdir(protocol, *args)
+        return None
+
+    def cd_sw(): # TODO
+        protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+        protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
+        # return Command_mkdir(protocol, *args)
+        return None
 
     switch = {
-        'touch': touch_sw(),
-        'mkdir': print("todo"),
-        'cp': print("todo"),
+        'touch': touch_sw,
+        'mkdir': mkdir_sw,
+        'cp': cp_sw,
         'curl': print("todo"),  # TODO implementation needed
-        'rm': print("todo"),
-        'rmdir': print("todo"),
-        'cd': print("todo")
+        'rm': rm_sw,
+        'rmdir': rmdir_sw,
+        'cd': cd_sw
     }
-    return switch.get(command, lambda: "Command not found")  # return None if invalid command
+    command = switch.get(command, lambda: "Command not found")  # return None if invalid command
+    return command()
 
 
 def append_command_history(ip_addr: str, command: str) -> None:
