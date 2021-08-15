@@ -71,13 +71,13 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
     @return None
     """
 
-    # Get the commands from the file, if it exists
     try:
         with open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'r') as fs_record:
             for line in fs_record:
                 tokens = line.split(' ')
-                command = fs_cmd_switch(tokens[0], tokens[1:], protocol)  # list(tokens[1:])
+                command = fs_cmd_switch(tokens[0], tokens[1:], protocol)
                 command.start()
+                command.protocol.pp.suppress_error_output = False
     except IOError:
         logging.info("No filesystem command record file found, likely new user")
 
@@ -102,33 +102,41 @@ def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtoc
     if len(args) == 0:
         args.append("")
 
+    # TODO: could try and reduce the size of each block here by making a "create protocol" function that takes the command type as a param
+
     def touch_sw():
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
+        protocol.pp.suppress_error_output = True
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
         return Command_touch(protocol, *args)
 
     def mkdir_sw():
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_mkdir, None, None, None)
+        protocol.pp.suppress_error_output = True
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
         return Command_mkdir(protocol, *args)
 
     def cp_sw():
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_cp, None, None, None)
+        protocol.pp.suppress_error_output = True
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
         return Command_cp(protocol, *args)
 
     def rm_sw():
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_rm, None, None, None)
+        protocol.pp.suppress_error_output = True
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
         return Command_rm(protocol, *args)
 
     def rmdir_sw():
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_rmdir, None, None, None)
+        protocol.pp.suppress_error_output = True
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
         return Command_rmdir(protocol, *args)
 
     def cd_sw():
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_cd, None, None, None)
+        protocol.pp.suppress_error_output = True
         protocol.cmdstack.append(HoneyPotShell(protocol, interactive=False, redirect=True))
         return Command_cd(protocol, *args)
 

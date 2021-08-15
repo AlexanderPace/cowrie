@@ -485,6 +485,7 @@ class StdOutStdErrEmulationProtocol:
         self.err_data: bytes = b""
         self.protocol = protocol
         self.redirect = redirect  # dont send to terminal if enabled
+        self.suppress_error_output = False
 
     def connectionMade(self):
 
@@ -520,9 +521,10 @@ class StdOutStdErrEmulationProtocol:
         self.next_command = command
 
     def errReceived(self, data: bytes) -> None:
-        if self.protocol and self.protocol.terminal:
-            self.protocol.terminal.write(data)
-        self.err_data = self.err_data + data
+        if not self.suppress_error_output:
+            if self.protocol and self.protocol.terminal:
+                self.protocol.terminal.write(data)
+            self.err_data = self.err_data + data
 
     def inConnectionLost(self):
         pass
