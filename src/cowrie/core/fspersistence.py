@@ -83,7 +83,7 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
                 command_name = tokens[0]
                 args = tokens[1:]
 
-                #Apply correct timestamp
+                # Apply correct timestamp
                 if tokens[0] in ["touch", "mkdir"]:
                     args.insert(0, timestamp)
                     args.insert(0, "-t")
@@ -91,6 +91,9 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
                 command = fs_cmd_switch(command_name, args, protocol)
                 command.start()
                 command.protocol.pp.suppress_error_output = False
+
+            # Reset the user back to their home directory
+            fs_cmd_switch("cd", ['~'], protocol).start()
     except IOError:
         logging.info("No filesystem command record file found, likely new user")
 
