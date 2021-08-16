@@ -543,13 +543,25 @@ class Command_mkdir(HoneyPotCommand):
     """
 
     def call(self):
-        for f in self.args:
+        timestamp = None
+
+        try:
+            optlist, args = getopt.getopt(self.args, "t:")
+        except getopt.GetoptError:
+            self.errorWrite("Unrecognised option\n")
+            return
+
+        for opt in optlist:
+            if opt[0] == "-t":
+                timestamp = time.mktime(datetime.datetime.strptime(opt[1], "%y%m%d%H%M").timetuple())
+
+        for f in args:
             pname = self.fs.resolve_path(f, self.protocol.cwd)
             if self.fs.exists(pname):
                 self.errorWrite(f"mkdir: cannot create directory `{f}': File exists\n")
                 return
             try:
-                self.fs.mkdir(pname, 0, 0, 4096, 16877)
+                self.fs.mkdir(pname, 0, 0, 4096, 16877, timestamp)
             except (fs.FileNotFound):
                 self.errorWrite(
                     f"mkdir: cannot create directory `{f}': No such file or directory\n"
