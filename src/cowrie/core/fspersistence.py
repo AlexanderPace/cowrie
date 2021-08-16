@@ -25,6 +25,8 @@ def record_fs_commands(ip_addr: str) -> None:
     @return None
     """
 
+    # TODO: the creation time for touch and mkdir needs to be recorded in the fs cmd log
+
     # Load the current log file
     log_data = []
 
@@ -45,7 +47,7 @@ def record_fs_commands(ip_addr: str) -> None:
             if 'New connection' in message:
                 session_commands = ""  # Reset the output to only get the last session for this IP
             elif 'CMD' in message:
-                for command in FS_COMMANDS:
+                for command in FS_COMMANDS: # TODO there is a bug here that if a malformed fs command get submitted, like "mkdirtouch", it will still get recorded
                     if command in message:
                         session_commands = session_commands + message[5:] + '\n'
                         break
@@ -97,6 +99,12 @@ def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtoc
 
     # Strip the newline from the final arg
     args[len(args) - 1] = args[len(args) - 1].rstrip()
+
+    index = 0
+    for arg in args:
+        if command == "cd" and arg in ["", " "]:
+            args[index] = "~"
+        index += 1
 
     # Add an empty argument if a command with no arguments has been stored to avoid an error
     if len(args) == 0:
