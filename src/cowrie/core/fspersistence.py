@@ -9,6 +9,7 @@ This is achieved by replaying filesystem-related commands upon user return.
 import json
 import logging
 import os
+import dateutil.parser
 
 from cowrie.commands.fs import *
 from cowrie.shell.command import HoneyPotCommand
@@ -18,14 +19,12 @@ from cowrie.shell.honeypot import HoneyPotShell, StdOutStdErrEmulationProtocol
 def record_fs_commands(ip_addr: str) -> None:
     """
     Scans log for the user matching the specified IP address and copies out all filesystem-related commands to a file
-    `[ip]_fs_cmds.txt` in `cowrie/fspersistence`.
+    `[ip]_fs_cmds` in `cowrie/fspersistence`.
     If this file is already present, it is appended.
 
     @param ip_addr: a string containing the source IP address of the selected user
     @return None
     """
-
-    # TODO: the creation time for touch and mkdir needs to be recorded in the fs cmd log
 
     # Load the current log file
     log_data = []
@@ -49,7 +48,7 @@ def record_fs_commands(ip_addr: str) -> None:
             elif 'CMD' in message:
                 for command in FS_COMMANDS: # TODO there is a bug here that if a malformed fs command get submitted, like "mkdirtouch", it will still get recorded
                     if command in message:
-                        session_commands = session_commands + message[5:] + '\n'
+                        session_commands = session_commands + entry.get("timestamp") + "," + message[5:] + '\n'
                         break
 
     # Create or load the filesystem command record file
@@ -57,7 +56,7 @@ def record_fs_commands(ip_addr: str) -> None:
         os.makedirs('fspersistence')
 
     try:
-        fs_record = open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'a')
+        fs_record = open('fspersistence/' + ip_addr + '_fs_cmds', 'a')
         fs_record.write(session_commands)
         fs_record.close()
     except IOError as e:
@@ -74,10 +73,22 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
     """
 
     try:
-        with open('fspersistence/' + ip_addr + '_fs_cmds.txt', 'r') as fs_record:
+        with open('fspersistence/' + ip_addr + '_fs_cmds', 'r') as fs_record:
             for line in fs_record:
-                tokens = line.split(' ')
-                command = fs_cmd_switch(tokens[0], tokens[1:], protocol)
+                split = line.split(",")
+                timestamp = dateutil.parser.isoparse(split[0])
+                timestamp = timestamp.strftime("%y%m%d%H%M")
+                command_string = split[1]
+                tokens = command_string.split(' ')
+                command_name = tokens[0]
+                args = tokens[1:]
+
+                #Apply correct timestamp
+                if tokens[0] in ["touch", "mkdir"]:
+                    args.insert(0, timestamp)
+                    args.insert(0, "-t")
+
+                command = fs_cmd_switch(command_name, args, protocol)
                 command.start()
                 command.protocol.pp.suppress_error_output = False
     except IOError:
