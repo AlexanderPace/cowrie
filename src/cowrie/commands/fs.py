@@ -11,6 +11,8 @@ import copy
 import getopt
 import os.path
 import re
+import time
+import datetime
 from typing import Callable, Dict
 
 from twisted.python import log
@@ -616,11 +618,23 @@ class Command_touch(HoneyPotCommand):
     """
 
     def call(self):
+        timestamp = None
+
         if not len(self.args):
             self.errorWrite("touch: missing file operand\n")
             self.errorWrite("Try `touch --help' for more information.\n")
             return
-        for f in self.args:
+        try:
+            optlist, args = getopt.getopt(self.args, "t:")
+        except getopt.GetoptError:
+            self.errorWrite("Unrecognised option\n")
+            return
+
+        for opt in optlist:
+            if opt[0] == "-t":
+                timestamp = time.mktime(datetime.datetime.strptime(opt[1], "%y%m%d%H%M").timetuple())
+
+        for f in args:
             pname = self.fs.resolve_path(f, self.protocol.cwd)
             if not self.fs.exists(os.path.dirname(pname)):
                 self.errorWrite(
@@ -635,7 +649,7 @@ class Command_touch(HoneyPotCommand):
                 self.errorWrite(f"touch: cannot touch `{pname}`: Permission denied\n")
                 return
 
-            self.fs.mkfile(pname, 0, 0, 0, 33188)
+            self.fs.mkfile(pname, 0, 0, 0, 33188, timestamp)
 
 
 commands["/bin/touch"] = Command_touch
