@@ -12,6 +12,7 @@ import os
 import dateutil.parser
 
 from cowrie.commands.fs import *
+from cowrie.core.config import CowrieConfig
 from cowrie.shell.command import HoneyPotCommand
 from cowrie.shell.honeypot import HoneyPotShell, StdOutStdErrEmulationProtocol
 
@@ -61,6 +62,8 @@ def record_fs_commands(ip_addr: str) -> None:
         fs_record.close()
     except IOError as e:
         logging.exception('Could not load or create fs command record file', e)
+
+    purge()
 
 
 def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') -> None:
@@ -229,3 +232,24 @@ def clear_command_history(ip_addr: str) -> None:
             history.close()
     except IOError as e:
         logging.exception('Could not load command history file ', e)
+
+
+def purge() -> None:
+    """
+    Deletes old command history and filesystem command record files.
+    Maxmimum file age determined by config parameter persistence_record_max_age.
+
+    @return: None
+    """
+
+    # Based on implementation from https://codingshiksha.com/python/python-3-automation-script-to-delete-all-files-inside-a-directory-older-than-x-days-using-os-and-time-modules-full-project-for-beginners/
+
+    files = os.listdir("fspersistence/")
+    now = time.time()
+    max_days = int(CowrieConfig.get("honeypot", "persistence_record_max_age", fallback="14"))
+    max_seconds = max_days * 86400
+
+    for file in files:
+        file_path = os.path.join("fspersistence/", file)
+        if os.path.isfile(file_path) and os.stat(file_path).st_mtime < now - max_seconds:
+            os.remove(file_path)

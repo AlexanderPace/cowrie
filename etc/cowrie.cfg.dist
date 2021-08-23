@@ -126,6 +126,11 @@ timezone = UTC
 # Beware that the path won't be included in your prompt any longer
 # prompt = hello>
 
+# Persistence Record Files Maximum Age
+# Files older than this will be deleted from the fspersistence directory.
+# Value in days.
+persistence_record_max_age = 14
+
 
 # ============================================================================
 # Network Specific Options
