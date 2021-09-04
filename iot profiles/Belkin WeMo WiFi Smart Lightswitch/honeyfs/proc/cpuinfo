@@ -1,0 +1,25 @@
+processor	: 0
+vendor_id	: MIPS
+cpu family	: 7
+model		: 16
+model name	: MIPS 24KEc Processor  @ 360MHz
+stepping	: 4
+cpu MHz		: 360.658
+cache size	: 256 KB
+physical id	: 0
+siblings	: 1
+core id		: 0
+cpu cores	: 1
+apicid		: 0
+initial apicid	: 0
+fpu		: no
+fpu_exception	: no
+cpuid level	: 10
+wp		: yes
+flags		: vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx lm constant_tsc arch_perfmon pebs bts rep_good pni monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr sse4_1 lahf_lm
+bogomips	: 4270.03
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 36 bits physical, 48 bits virtual
+power management:
+

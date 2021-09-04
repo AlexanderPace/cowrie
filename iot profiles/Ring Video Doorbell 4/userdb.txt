@@ -1,0 +1,7 @@
+root:x:!honeypot
+root:x:*
+ring:x:*
+system:x:system
+guest:x:*
+ftp:x:*
+testing:x:testing
