@@ -1,0 +1,21 @@
+Architecture:          x86_64
+CPU op-mode(s):        32-bit
+Byte Order:            Little Endian
+CPU(s):                1
+On-line CPU(s) list:   0
+Thread(s) per core:    1
+Core(s) per socket:    1
+Socket(s):             1
+NUMA node(s):          1
+Vendor ID:             Renesas
+CPU family:            5
+Model:                 2
+Stepping:              0
+CPU MHz:               300.419
+BogoMIPS:              4270.03
+Hypervisor vendor:     none
+Virtualization type:   none
+L1d cache:             512K
+L1i cache:             512K
+L2 cache:              6144K
+NUMA node0 CPU(s):     0

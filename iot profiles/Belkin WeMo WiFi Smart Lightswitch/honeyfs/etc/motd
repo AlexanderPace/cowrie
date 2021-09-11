@@ -1,8 +1,12 @@
+Welcome to Ubuntu Core 18.04.2 LTS (GNU/Linux 5.3.0-77-generic x86_64)
+ * Ubuntu Core:     https://www.ubuntu.com/core
+ * Community:       https://forum.snapcraft.io
+ * Snaps:           https://snapcraft.io
 
-The programs included with the Linux-RT/Linux system are free software;
+The programs included with the Ubuntu Core/Linux system are free software;
 the exact distribution terms for each program are described in the
 individual files in /usr/share/doc/*/copyright.
 Other software present are the property of Belkin(TM).
 
-Linux-RT (Realtime Linux)/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+Ubuntu Core/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
 permitted by applicable law.

@@ -1,5 +1,5 @@
 processor	: 0
-vendor_id	: MIPS
+vendor_id	: MIPSTechnologies
 cpu family	: 7
 model		: 16
 model name	: MIPS 24KEc Processor  @ 360MHz
