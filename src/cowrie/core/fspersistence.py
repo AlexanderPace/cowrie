@@ -38,19 +38,20 @@ def record_fs_commands(ip_addr: str) -> None:
         logging.exception('Could not load log file ', e)
 
     # Search for filesystem commands from the specified user and append them to the filesystem command record file
-    FS_COMMANDS = ['touch', 'mkdir', 'cp', 'rm', 'rmdir', 'cd']  # TODO: add curl support
+    FS_COMMANDS = ['touch ', 'mkdir ', 'cp ', 'rm ', 'rmdir ', 'cd ']  # TODO: add curl support
 
     session_commands = ""
     for entry in log_data:
         if entry.get('src_ip') == ip_addr:
-            message = entry.get('message')
-            if 'New connection' in message:
-                session_commands = ""  # Reset the output to only get the last session for this IP
-            elif 'CMD' in message:
-                for command in FS_COMMANDS: # TODO there is a bug here that if a malformed fs command get submitted, like "mkdirtouch", it will still get recorded
-                    if command in message:
-                        session_commands = session_commands + entry.get("timestamp") + "," + message[5:] + '\n'
-                        break
+            message = ''.join(entry.get('message'))
+            if not len(message) == 0:
+                if message.startswith('New connection'):
+                    session_commands = ""  # Reset the output to only get the last session for this IP
+                elif message.startswith('CMD: '):
+                    for command in FS_COMMANDS:
+                        if message.startswith(command, 5):
+                            session_commands = session_commands + entry.get("timestamp") + "," + message[5:] + '\n'
+                            break
 
     # Create or load the filesystem command record file
     if not os.path.exists('fspersistence'):
@@ -126,8 +127,6 @@ def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtoc
     # Add an empty argument if a command with no arguments has been stored to avoid an error
     if len(args) == 0:
         args.append("")
-
-    # TODO: could try and reduce the size of each block here by making a "create protocol" function that takes the command type as a param
 
     def touch_sw():
         protocol.pp = StdOutStdErrEmulationProtocol(protocol, Command_touch, None, None, None)
