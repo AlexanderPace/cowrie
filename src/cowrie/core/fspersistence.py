@@ -38,7 +38,7 @@ def record_fs_commands(ip_addr: str) -> None:
         logging.exception('Could not load log file ', e)
 
     # Search for filesystem commands from the specified user and append them to the filesystem command record file
-    FS_COMMANDS = ['touch ', 'mkdir ', 'cp ', 'rm ', 'rmdir ', 'cd ']  # TODO: add curl support
+    FS_COMMANDS = ['touch ', 'mkdir ', 'cp ', 'rm ', 'rmdir ', 'cd ']
 
     session_commands = ""
     for entry in log_data:
@@ -78,6 +78,7 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
 
     try:
         with open('fspersistence/' + ip_addr + '_fs_cmds', 'r') as fs_record:
+            log.msg("Replaying filesystem commands")
             for line in fs_record:
                 split = line.split(",")
                 timestamp = dateutil.parser.isoparse(split[0])
@@ -99,7 +100,7 @@ def replay_fs_commands(ip_addr: str, protocol: 'HoneyPotInteractiveProtocol') ->
             # Reset the user back to their home directory
             fs_cmd_switch("cd", ['~'], protocol).start()
     except IOError:
-        logging.info("No filesystem command record file found, likely new user")
+        log.msg("No filesystem command record file found, likely new user")
 
 
 def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtocol') -> HoneyPotCommand:
@@ -168,7 +169,6 @@ def fs_cmd_switch(command: str, args: list, protocol: 'HoneyPotInteractiveProtoc
         'touch': touch_sw,
         'mkdir': mkdir_sw,
         'cp': cp_sw,
-        'curl': print("TODO: add curl support"),  # TODO implementation needed
         'rm': rm_sw,
         'rmdir': rmdir_sw,
         'cd': cd_sw
