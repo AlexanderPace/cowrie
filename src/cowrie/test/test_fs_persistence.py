@@ -10,9 +10,7 @@ import os
 import unittest
 import paramiko
 from paramiko.channel import Channel
-import time
 from datetime import datetime
-
 from paramiko.client import SSHClient
 
 
@@ -28,11 +26,11 @@ class TestFiles(unittest.TestCase):
         ssh.close()
 
         channel, ssh = login()
-        channel.sendall('ls -l\n') #TODO test the date/time is also correct
+        channel.sendall('ls -l\n')  # TODO test the date/time is also correct
         channel.recv(1024)  # first read just shows a prompt
         output = channel.recv(4096)
         # print("####:", output)
-        result = readOutput(output)
+        result = read_output(output)
         # print("Sanitised:", bytes(result, 'utf-8'))
 
         self.assertIn("file", result, "File not present")
@@ -87,20 +85,8 @@ def login() -> (Channel, SSHClient):
 
     return channel, ssh
 
-    # channel.send('hostname\n') #TODO: REMOVE
-    # channel.recv(1024)  # first read just shows a prompt
-    # output = channel.recv(4096)
-    # print("####: ", output)
-    # print("Sanitised: ", readOutput(output))
-    #
-    # channel.send('hostname\n')  # TODO: REMOVE
-    # #channel.recv(1024)  # first read just shows a prompt
-    # output = channel.recv(4096)
-    # print("####: ", output)
-    # print("Sanitised: ", readOutput(output))
 
-
-def readOutput(input: bytes) -> str:
+def read_output(input: bytes) -> str:
     """Reads in output from Paramiko SSH and returns the actual command output"""
     input = input.decode('utf-8')
     index0 = input.find('\x1b[4l')  # Remove prefix characters
@@ -116,6 +102,7 @@ def readOutput(input: bytes) -> str:
 
     output.strip(' \r\n\x1b')
     return output
+
 
 if __name__ == '__main__':
     unittest.main()
