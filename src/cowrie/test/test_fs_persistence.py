@@ -152,4 +152,8 @@ def read_output(input: bytes) -> str:
 
 
 if __name__ == '__main__':
-    unittest.main()
+    # Try/catch is needed because for some reason env_reset() isn't called when simply placed after the call to main()
+    try:
+        unittest.main()
+    finally:
+        env_reset()
