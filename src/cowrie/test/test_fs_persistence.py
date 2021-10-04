@@ -26,42 +26,89 @@ class TestFiles(unittest.TestCase):
         ssh.close()
 
         channel, ssh = login()
-        channel.sendall('ls -l\n')  # TODO test the date/time is also correct
+        channel.sendall('ls -l\n')
         channel.recv(1024)  # first read just shows a prompt
         output = channel.recv(4096)
-        # print("####:", output)
         result = read_output(output)
-        # print("Sanitised:", bytes(result, 'utf-8'))
 
+        channel.close()
+        ssh.close()
         self.assertIn("file", result, "File not present")
         output_with_date_time = "-rw-r--r-- 1 root root 0 " + date_time + " file"
-        self.assertEqual(result, output_with_date_time)
+        self.assertEqual(result, output_with_date_time, "Date and time incorrect")
+
+    def test_touch_in_dir(self):
+        """Makes a directory, then touches a file in it and checks if it persists"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('mkdir dir\n')
+        channel.sendall('cd dir\n')
+        channel.sendall('touch file\n')
+        channel.recv(1024)
+        now = datetime.now()
+        date_time = now.strftime("%Y-%m-%d %H:%M")
+        channel.close()
         ssh.close()
 
-#     def test_touch_in_dir(self):
-#         """Makes a directory, then touches a file in it and checks if it persists"""
-#         self.assertEqual(True, False)
-#
-#     def test_rm(self):
-#         """Touches a file, reloads, then removes it and checks if the change persists"""
-#         self.assertEqual(True, False)
+        channel, ssh = login()
+        channel.sendall('ls -l dir\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
+
+        channel.close()
+        ssh.close()
+        self.assertIn("file", result, "File not present")
+        output_with_date_time = "-rw-r--r-- 1 root root 0 " + date_time + " file"
+        self.assertEqual(result, output_with_date_time, "Date and time incorrect")
+
+
+    def test_rm(self):
+        """Touches a file, reloads, then removes it and checks if the change persists"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('touch file\n')
+        channel.recv(1024)
+        channel.close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('ls\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
+
+        self.assertIn("file", result, "File not present")
+        channel.close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('rm file\n')
+        channel.recv(1024)
+        channel.close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('ls\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
+        channel.close()
+        ssh.close()
+        self.assertNotIn("file", result, "File still present")
 #
 #     def test_cp(self):
 #         """Touches a file, copies it, and checks if it persists"""
-#         self.assertEqual(True, False)
-#
+
 # class TestDirs(unittest.TestCase):
 #     def test_mkdir_simple(self):
 #         """Makes a directory and checks if it persists"""
-#         self.assertEqual(True, False)
-#
+
 #     def test_mkdir_nested(self):
 #         """Makes a directory, then makes another directory within it and checks if it persists"""
-#         self.assertEqual(True, False)
-#
+
 #     def test_rmdir(self):
 #         """Makes a directory, reloads, then removes it and checks if the change persists"""
-#         self.assertEqual(True, False)
 
 
 def env_reset():
