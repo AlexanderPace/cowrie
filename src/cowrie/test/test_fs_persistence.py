@@ -8,6 +8,8 @@ It should be noted that the activity generated from these tests will appear in l
 
 import os
 import unittest
+import warnings
+
 import paramiko
 from paramiko.channel import Channel
 from datetime import datetime
@@ -23,6 +25,7 @@ class TestFiles(unittest.TestCase):
         now = datetime.now()
         date_time = now.strftime("%Y-%m-%d %H:%M")
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
 
         channel, ssh = login()
@@ -32,6 +35,7 @@ class TestFiles(unittest.TestCase):
         result = read_output(output)
 
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
         self.assertIn("file", result, "File not present")
         output_with_date_time = "-rw-r--r-- 1 root root 0 " + date_time + " file"
@@ -48,6 +52,7 @@ class TestFiles(unittest.TestCase):
         now = datetime.now()
         date_time = now.strftime("%Y-%m-%d %H:%M")
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
 
         channel, ssh = login()
@@ -57,6 +62,7 @@ class TestFiles(unittest.TestCase):
         result = read_output(output)
 
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
         self.assertIn("file", result, "File not present")
         output_with_date_time = "-rw-r--r-- 1 root root 0 " + date_time + " file"
@@ -70,6 +76,7 @@ class TestFiles(unittest.TestCase):
         channel.sendall('touch file\n')
         channel.recv(1024)
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
 
         channel, ssh = login()
@@ -80,12 +87,14 @@ class TestFiles(unittest.TestCase):
 
         self.assertIn("file", result, "File not present")
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
 
         channel, ssh = login()
         channel.sendall('rm file\n')
         channel.recv(1024)
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
 
         channel, ssh = login()
@@ -94,21 +103,122 @@ class TestFiles(unittest.TestCase):
         output = channel.recv(4096)
         result = read_output(output)
         channel.close()
+        ssh.get_transport().close()
         ssh.close()
         self.assertNotIn("file", result, "File still present")
-#
-#     def test_cp(self):
-#         """Touches a file, copies it, and checks if it persists"""
 
-# class TestDirs(unittest.TestCase):
-#     def test_mkdir_simple(self):
-#         """Makes a directory and checks if it persists"""
+    def test_cp(self):
+        """Touches a file, copies it, and checks if it persists"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('touch file\n')
+        channel.sendall('cp file file2\n')
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
 
-#     def test_mkdir_nested(self):
-#         """Makes a directory, then makes another directory within it and checks if it persists"""
+        channel, ssh = login()
+        channel.sendall('ls\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
 
-#     def test_rmdir(self):
-#         """Makes a directory, reloads, then removes it and checks if the change persists"""
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertIn("file", result, "Original file not present")
+        self.assertIn("file2", result, "Copied file not present")
+
+class TestDirs(unittest.TestCase):
+    def test_mkdir_simple(self):
+        """Makes a directory and checks if it persists"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('mkdir dir\n')
+        now = datetime.now()
+        date_time = now.strftime("%Y-%m-%d %H:%M")
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('ls -l\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
+
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertIn("dir", result, "Directory not present")
+        output_with_date_time = "drwxr-xr-x 1 root root 4096 " + date_time + " dir"
+        self.assertEqual(result, output_with_date_time, "Date and time incorrect")
+
+    def test_mkdir_nested(self):
+        """Makes a directory, then makes another directory within it and checks if it persists"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('mkdir dir\n')
+        channel.sendall('cd dir\n')
+        channel.sendall('mkdir dir2\n')
+        channel.recv(1024)
+        now = datetime.now()
+        date_time = now.strftime("%Y-%m-%d %H:%M")
+        channel.close()
+        ssh.get_transport().close()
+        ssh.get_transport().close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('ls -l dir\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
+
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertIn("dir2", result, "Directory not present")
+        output_with_date_time = "drwxr-xr-x 1 root root 4096 " + date_time + " dir2"
+        self.assertEqual(result, output_with_date_time, "Date and time incorrect")
+
+    def test_rmdir(self):
+        """Makes a directory, reloads, then removes it and checks if the change persists"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('mkdir dir\n')
+        channel.recv(1024)
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('ls\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
+
+        self.assertIn("dir", result, "Directory not present")
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('rmdir dir\n')
+        channel.recv(1024)
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('ls\n')
+        channel.recv(1024)
+        output = channel.recv(4096)
+        result = read_output(output)
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertNotIn("dir", result, "Directory still present")
 
 
 def env_reset():
