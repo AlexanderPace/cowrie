@@ -7,13 +7,14 @@ It should be noted that the activity generated from these tests will appear in l
 """
 
 import os
+from shutil import copyfile
 import unittest
-import warnings
-
+import time
 import paramiko
 from paramiko.channel import Channel
 from datetime import datetime
 from paramiko.client import SSHClient
+import warnings
 
 
 class TestFiles(unittest.TestCase):
@@ -129,6 +130,7 @@ class TestFiles(unittest.TestCase):
         self.assertIn("file", result, "Original file not present")
         self.assertIn("file2", result, "Copied file not present")
 
+
 class TestDirs(unittest.TestCase):
     def test_mkdir_simple(self):
         """Makes a directory and checks if it persists"""
@@ -221,6 +223,75 @@ class TestDirs(unittest.TestCase):
         self.assertNotIn("dir", result, "Directory still present")
 
 
+class TestSpeed(unittest.TestCase):
+    def test_speed_control(self):
+        """Tests the average time it takes for no commands to be replayed upon login"""
+        env_reset()
+        samples = []
+        for i in range(9):
+            before = time.perf_counter()
+            channel, ssh = login()
+            time_elapsed = time.perf_counter() - before
+            channel.close()
+            ssh.close()
+            samples.append(time_elapsed)
+
+        avg_time = sum(samples) / len(samples)
+        print("Average time for control:", avg_time)
+        self.assertLess(avg_time, 4)
+
+    def test_speed_100(self):
+        """Tests the average time it takes for 100 commands to be replayed upon login"""
+        env_reset()
+        copyfile("100 commands", "/home/cowrie/cowrie/fspersistence/127.0.0.1_fs_cmds")
+        samples = []
+        for i in range(9):
+            before = time.perf_counter()
+            channel, ssh = login()
+            time_elapsed = time.perf_counter() - before
+            channel.close()
+            ssh.close()
+            samples.append(time_elapsed)
+
+        avg_time = sum(samples) / len(samples)
+        print("Average time for 100 commands:", avg_time)
+        self.assertLess(avg_time, 4)
+
+    def test_speed_1000(self):
+        """Tests the average time it takes for 1,000 commands to be replayed upon login"""
+        env_reset()
+        copyfile("1000 commands", "/home/cowrie/cowrie/fspersistence/127.0.0.1_fs_cmds")
+        samples = []
+        for i in range(9):
+            before = time.perf_counter()
+            channel, ssh = login()
+            time_elapsed = time.perf_counter() - before
+            channel.close()
+            ssh.close()
+            samples.append(time_elapsed)
+
+        avg_time = sum(samples) / len(samples)
+        print("Average time for 1,000 commands:", avg_time)
+        self.assertLess(avg_time, 4)
+
+    def test_speed_10000(self):
+        """Tests the average time it takes for 10,000 commands to be replayed upon login"""
+        env_reset()
+        copyfile("10000 commands", "/home/cowrie/cowrie/fspersistence/127.0.0.1_fs_cmds")
+        samples = []
+        for i in range(9):
+            before = time.perf_counter()
+            channel, ssh = login()
+            time_elapsed = time.perf_counter() - before
+            channel.close()
+            ssh.close()
+            samples.append(time_elapsed)
+
+        avg_time = sum(samples) / len(samples)
+        print("Average time for 10,000 commands:", avg_time)
+        self.assertLess(avg_time, 4)
+
+
 def env_reset():
     """Removes the record files so the system starts from a clean slate"""
     root = "/home/cowrie/cowrie/fspersistence/"
@@ -236,6 +307,7 @@ def login() -> (Channel, SSHClient):
     """Logs in to the Cowrie instance as an attacker"""
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    warnings.filterwarnings(action="ignore", category=ResourceWarning)
     ssh.connect(hostname="localhost", port=2222, username="TEST", password="TEST")
     channel = ssh.get_transport().open_session()
     channel.invoke_shell()
