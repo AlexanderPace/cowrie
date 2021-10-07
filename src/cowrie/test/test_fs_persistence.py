@@ -146,6 +146,7 @@ class TestDirs(unittest.TestCase):
         channel, ssh = login()
         channel.sendall('ls -l\n')
         channel.recv(1024)
+        time.sleep(0.5)
         output = channel.recv(4096)
         result = read_output(output)
 
@@ -174,6 +175,7 @@ class TestDirs(unittest.TestCase):
         channel, ssh = login()
         channel.sendall('ls -l dir\n')
         channel.recv(1024)
+        time.sleep(0.5)
         output = channel.recv(4096)
         result = read_output(output)
 
@@ -237,7 +239,7 @@ class TestSpeed(unittest.TestCase):
             samples.append(time_elapsed)
 
         avg_time = sum(samples) / len(samples)
-        print("Average time for control:", avg_time)
+        print("\nAverage time for control:", avg_time)
         self.assertLess(avg_time, 4)
 
     def test_speed_100(self):
@@ -254,7 +256,7 @@ class TestSpeed(unittest.TestCase):
             samples.append(time_elapsed)
 
         avg_time = sum(samples) / len(samples)
-        print("Average time for 100 commands:", avg_time)
+        print("\nAverage time for 100 commands:", avg_time)
         self.assertLess(avg_time, 4)
 
     def test_speed_1000(self):
@@ -271,7 +273,7 @@ class TestSpeed(unittest.TestCase):
             samples.append(time_elapsed)
 
         avg_time = sum(samples) / len(samples)
-        print("Average time for 1,000 commands:", avg_time)
+        print("\nAverage time for 1,000 commands:", avg_time)
         self.assertLess(avg_time, 4)
 
     def test_speed_10000(self):
@@ -288,8 +290,63 @@ class TestSpeed(unittest.TestCase):
             samples.append(time_elapsed)
 
         avg_time = sum(samples) / len(samples)
-        print("Average time for 10,000 commands:", avg_time)
+        print("\nAverage time for 10,000 commands:", avg_time)
         self.assertLess(avg_time, 4)
+
+
+class TestHistory(unittest.TestCase):
+    def test_history_simple(self):
+        """Verifies the history command still operates as normal"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('cd ~\n')
+        channel.recv(1024)
+        channel.sendall('history\n')
+        time.sleep(0.5)
+        output = channel.recv(4096)
+
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertIn(bytes("1  cd ~\r\n    2  history\r\n", "utf-8"), output, "History output not as expected")
+
+    def test_history_persistence(self):
+        """Verifies the output of the  history command persists across sessions"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('cd ~\n')
+        channel.sendall('exit\n')
+        channel.recv(1024)
+        channel.close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('history\n')
+        time.sleep(0.5)
+        output = channel.recv(4096)
+
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertIn(bytes("1  cd ~\r\n    2  exit\r\n    3  history\r\n", "utf-8"), output, "History output not persisting")
+
+    def test_history_clear(self):
+        """Verifies the history command output is cleared when passed the -c option"""
+        """Verifies the history command still operates as normal"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('cd ~\n')
+        channel.recv(1024)
+        channel.sendall('history -c\n')
+        channel.recv(1024)
+        channel.sendall('history\n')
+        time.sleep(0.5)
+        output = channel.recv(4096)
+
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertIn(bytes("1  history\r\n\x1b[4h", "utf-8"), output, "History output not cleared")
 
 
 def env_reset():
