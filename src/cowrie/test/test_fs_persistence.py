@@ -349,6 +349,25 @@ class TestHistory(unittest.TestCase):
         ssh.close()
         self.assertIn(bytes("1  history\r\n\x1b[4h", "utf-8"), output, "History output not cleared")
 
+    def test_replay_history(self):
+        """Verifies replayed commands do not show in the output of the history command"""
+        env_reset()
+        channel, ssh = login()
+        channel.sendall('touch file\n')
+        channel.sendall('exit\n')
+        channel.recv(1024)
+        channel.close()
+        ssh.close()
+
+        channel, ssh = login()
+        channel.sendall('history\n')
+        time.sleep(0.5)
+        output = channel.recv(4096)
+
+        channel.close()
+        ssh.get_transport().close()
+        ssh.close()
+        self.assertIn(bytes("1  touch file\r\n    2  exit\r\n    3  history\r\n\x1b[4h", "utf-8"), output, "History output not as expected")
 
 def env_reset():
     """Removes the record files so the system starts from a clean slate"""
