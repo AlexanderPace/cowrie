@@ -85,6 +85,7 @@ class TestFiles(unittest.TestCase):
         channel, ssh = login()
         channel.sendall('ls\n')
         channel.recv(1024)
+        time.sleep(0.5)
         output = channel.recv(4096)
         result = read_output(output)
 
