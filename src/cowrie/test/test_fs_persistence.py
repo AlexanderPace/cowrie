@@ -32,6 +32,7 @@ class TestFiles(unittest.TestCase):
         channel, ssh = login()
         channel.sendall('ls -l\n')
         channel.recv(1024)  # first read just shows a prompt
+        time.sleep(0.5)
         output = channel.recv(4096)
         result = read_output(output)
 
@@ -59,6 +60,7 @@ class TestFiles(unittest.TestCase):
         channel, ssh = login()
         channel.sendall('ls -l dir\n')
         channel.recv(1024)
+        time.sleep(0.5)
         output = channel.recv(4096)
         result = read_output(output)
 
@@ -332,7 +334,6 @@ class TestHistory(unittest.TestCase):
 
     def test_history_clear(self):
         """Verifies the history command output is cleared when passed the -c option"""
-        """Verifies the history command still operates as normal"""
         env_reset()
         channel, ssh = login()
         channel.sendall('cd ~\n')
